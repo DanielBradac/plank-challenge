@@ -66,4 +66,10 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    //ViewModel
+    implementation (libs.androidx.lifecycle.viewmodel.compose)
+
+    // Extended Icons
+    implementation(libs.androidx.material.icons.extended)
 }
