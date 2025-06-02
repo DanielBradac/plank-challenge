@@ -68,8 +68,11 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 
     //ViewModel
-    implementation (libs.androidx.lifecycle.viewmodel.compose)
+    implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
 
     // Extended Icons
-    implementation(libs.androidx.material.icons.extended)
+    implementation("androidx.compose.material:material-icons-extended:1.6.7")
+
+    // Navigation
+    implementation("androidx.navigation:navigation-compose:2.7.7")
 }

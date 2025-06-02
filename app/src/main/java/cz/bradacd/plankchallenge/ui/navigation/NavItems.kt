@@ -1,6 +1,8 @@
 package cz.bradacd.plankchallenge.ui.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.WatchLater
 import androidx.compose.ui.graphics.vector.ImageVector
 
 data class NavItem (
@@ -12,12 +14,12 @@ data class NavItem (
 val navItems = listOf(
     NavItem(
         label = "StopWatchScreen",
-        icon = Icons.Default.Home,
+        icon = Icons.Default.WatchLater,
         route = Screens.StopWatchScreen.name
     ),
     NavItem(
         label = "LogScreen",
-        icon = Icons.Default,
+        icon = Icons.Default.Star,
         route = Screens.LogScreen.name
     )
 )
