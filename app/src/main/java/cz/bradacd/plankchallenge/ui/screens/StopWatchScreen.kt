@@ -15,23 +15,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import cz.bradacd.plankchallenge.formatTimeFromTenths
 import cz.bradacd.plankchallenge.viewmodel.StopWatchState
 import cz.bradacd.plankchallenge.viewmodel.StopWatchViewModel
 
 @Composable
 fun StopWatchScreen(viewModel: StopWatchViewModel = viewModel()) {
+    val context = LocalContext.current
+
     val stopWatchState by viewModel.stopWatchState.collectAsState()
     val elapsedTenths by viewModel.elapsedTenths.collectAsState()
-
-    // Format elapsed time as MM:SS.d
-    val totalSeconds = elapsedTenths / 10
-    val minutes = totalSeconds / 60
-    val seconds = totalSeconds % 60
-    val tenths = elapsedTenths % 10
-    val formattedTime = String.format("%02d:%02d.%d", minutes, seconds, tenths)
 
     Box(
         modifier = Modifier
@@ -45,7 +42,7 @@ fun StopWatchScreen(viewModel: StopWatchViewModel = viewModel()) {
                         viewModel.onRelease()
                     },
                     onTap = {
-                        viewModel.onTap()
+                        viewModel.onTap(context)
                     }
                 )
             }
@@ -55,7 +52,7 @@ fun StopWatchScreen(viewModel: StopWatchViewModel = viewModel()) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = formattedTime,
+                text = elapsedTenths.formatTimeFromTenths(),
                 style = MaterialTheme.typography.displayMedium,
                 fontWeight = FontWeight.Bold
             )

@@ -12,9 +12,11 @@ data class Log(
 
 data class LogRecord(
     @SerializedName("id") val id: String,
-    @SerializedName("date") val date: Instant,
-    @SerializedName("timeMilis") val timeMilis: Long
-)
+    @SerializedName("date") val dateMillis: Long,
+    @SerializedName("elapsedTenths") val elapsedTenths: Int
+) {
+    val date: Instant get() = Instant.ofEpochMilli(dateMillis)
+}
 
 private val gson = Gson()
 
@@ -28,9 +30,10 @@ fun LogRecord.save(context: Context) {
 
 fun LogRecord.delete(context: Context) {
     val currentLogEntries = loadLogEntries(context)
+    val newLogDataEntries = currentLogEntries.filter { it.id != this.id }.toMutableList()
     saveLog(
         context = context,
-        newLog = Log(currentLogEntries.filter { id != this.id })
+        newLog = Log(newLogDataEntries)
     )
 }
 
@@ -40,7 +43,9 @@ fun loadLogEntries(context: Context): List<LogRecord> {
     val logJson = sharedPreferences.getString("PlankLog", null)
 
     return if (logJson != null) {
-        gson.fromJson(logJson, Log::class.java).logEntries
+        gson.fromJson(logJson, Log::class.java).logEntries.also {
+            it.forEach { println(it.date) }
+        }
     } else {
         emptyList()
     }
