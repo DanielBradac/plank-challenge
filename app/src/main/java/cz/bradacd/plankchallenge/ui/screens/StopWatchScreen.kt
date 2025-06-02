@@ -18,6 +18,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import cz.bradacd.plankchallenge.viewmodel.StopWatchState
 import cz.bradacd.plankchallenge.viewmodel.StopWatchViewModel
 
 @Composable
@@ -60,10 +61,19 @@ fun StopWatchScreen(viewModel: StopWatchViewModel = viewModel()) {
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = stopWatchState::class.simpleName ?: "",
+                text = getTitleByState(stopWatchState),
                 style = MaterialTheme.typography.bodyLarge
             )
         }
+    }
+}
+
+fun getTitleByState(state: StopWatchState): String {
+    return when(state) {
+        StopWatchState.Ready -> "Press and hold the screen when you're ready"
+        StopWatchState.Set -> "Release to start"
+        StopWatchState.Running -> "Tap to stop"
+        StopWatchState.Stopped -> "Tap to reset run"
     }
 }
 
