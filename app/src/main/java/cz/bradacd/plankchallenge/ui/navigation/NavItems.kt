@@ -13,12 +13,12 @@ data class NavItem (
 
 val navItems = listOf(
     NavItem(
-        label = "StopWatchScreen",
+        label = "Stopwatch",
         icon = Icons.Default.WatchLater,
         route = Screens.StopWatchScreen.name
     ),
     NavItem(
-        label = "LogScreen",
+        label = "Your planks",
         icon = Icons.Default.Star,
         route = Screens.LogScreen.name
     )
