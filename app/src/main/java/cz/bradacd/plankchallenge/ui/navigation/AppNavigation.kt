@@ -19,6 +19,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import cz.bradacd.plankchallenge.ui.screens.LogScreen
+import cz.bradacd.plankchallenge.ui.screens.SettingsScreen
 import cz.bradacd.plankchallenge.ui.screens.StopWatchScreen
 
 // Function to determine the slide direction
@@ -79,6 +80,9 @@ fun AppNavigation() {
             }
             composable(route = Screens.LogScreen.name) {
                 LogScreen()
+            }
+            composable(route = Screens.SettingsScreen.name) {
+                SettingsScreen()
             }
         }
     }

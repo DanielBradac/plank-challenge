@@ -45,6 +45,7 @@ class StopWatchViewModel : ViewModel() {
     }
 
     fun startStopWatch() {
+        countDownJob?.cancel()
         startTime = SystemClock.elapsedRealtime()
         _stopWatchState.value = StopWatchState.Running
 
@@ -95,6 +96,7 @@ class StopWatchViewModel : ViewModel() {
             }
             StopWatchState.CountDown -> {
                 _stopWatchState.value = StopWatchState.Ready
+                countDownJob?.cancel()
             }
         }
     }

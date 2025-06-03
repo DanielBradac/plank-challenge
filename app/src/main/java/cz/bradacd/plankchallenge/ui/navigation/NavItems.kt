@@ -1,6 +1,7 @@
 package cz.bradacd.plankchallenge.ui.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.WatchLater
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -21,5 +22,10 @@ val navItems = listOf(
         label = "Your planks",
         icon = Icons.Default.Star,
         route = Screens.LogScreen.name
+    ),
+    NavItem(
+        label = "Settings",
+        icon = Icons.Default.Settings,
+        route = Screens.SettingsScreen.name
     )
 )
