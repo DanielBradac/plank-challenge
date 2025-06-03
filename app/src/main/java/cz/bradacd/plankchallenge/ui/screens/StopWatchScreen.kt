@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -75,20 +76,22 @@ fun StopWatchScreen(viewModel: StopWatchViewModel = viewModel()) {
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = getTitleByState(stopWatchState),
-                style = MaterialTheme.typography.bodyLarge
-            )
+
+            StateTitle(stopWatchState, MaterialTheme.typography.bodyLarge)
         }
     }
 }
 
-fun getTitleByState(state: StopWatchState): String {
-    return when(state) {
-        StopWatchState.Ready -> "Tap to start"
-        StopWatchState.CountDown -> "Get ready"
-        StopWatchState.Running -> "Tap to stop"
-        StopWatchState.Stopped -> "Tap to reset run"
+@Composable
+fun StateTitle(state: StopWatchState, style: TextStyle) {
+    when(state) {
+        StopWatchState.Ready -> Text(text = "Tap to start", style = style)
+        StopWatchState.CountDown -> Text(text = "Get ready", style = style)
+        StopWatchState.Running -> {
+            Text(text = "Plank!", style = style)
+            Text(text = "Tap to stop", style = style)
+        }
+        StopWatchState.Stopped -> Text(text = "Tap to reset run", style = style)
     }
 }
 
