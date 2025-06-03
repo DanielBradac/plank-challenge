@@ -9,7 +9,10 @@ import com.google.api.services.sheets.v4.Sheets
 import com.google.api.services.sheets.v4.SheetsScopes
 import com.google.api.services.sheets.v4.model.ValueRange
 import cz.bradacd.plankchallenge.GoogleSheetException
-import cz.bradacd.plankchallenge.LogRepository.LogRecord
+import cz.bradacd.plankchallenge.InvalidSettingsException
+import cz.bradacd.plankchallenge.LocalRepository.LogRecord
+import cz.bradacd.plankchallenge.LocalRepository.Settings
+import cz.bradacd.plankchallenge.LocalRepository.loadSettings
 import java.time.Instant
 import java.time.LocalDate
 import java.time.Year
@@ -17,8 +20,50 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 
+fun getPersonData(context: Context, settings: Settings): PersonData {
+    val targetColumnIndex =
+        findColumnIndexByName(settings.sheetName, context, settings.sheetId, settings.personName)
+    val range = "${settings.sheetName}!2:100"
 
-fun getSheetsService(context: Context): Sheets {
+    val service = getSheetsService(context.applicationContext)
+    val response = service.spreadsheets().values()
+        .get(settings.sheetId, range)
+        .execute()
+
+    val values = response.getValues()
+    val entries: MutableMap<String, Int> = mutableMapOf()
+    values.forEach { row ->
+        val strDate = row[0].toString()
+        println(row)
+        if (row.size > targetColumnIndex && isValidDateFormat(strDate)) {
+            println("inside")
+            val secondsInPlank = row[targetColumnIndex].toString()
+            entries[strDate] = secondsInPlank.toInt()
+        }
+    }
+
+    return PersonData(
+        name = settings.personName,
+        entries = entries
+    )
+}
+
+fun writePersonEntry(context: Context, plankRecord: LogRecord, settings: Settings) {
+    val targetColumnIndex =
+        findColumnIndexByName(settings.sheetName, context, settings.sheetId, settings.personName)
+    val targetRowIndex =
+        findRowIndexByDate(settings.sheetName, plankRecord.date, context, settings.sheetId)
+
+    val body = ValueRange().setValues(listOf(listOf(plankRecord.elapsedSeconds)))
+    val service = getSheetsService(context.applicationContext)
+    val cellCoordinated = "${indexToColumnName(targetColumnIndex + 1)}${targetRowIndex + 1}"
+    service.spreadsheets().values()
+        .update(settings.sheetId, "${settings.sheetName}!$cellCoordinated", body)
+        .setValueInputOption("RAW")
+        .execute()
+}
+
+private fun getSheetsService(context: Context): Sheets {
     val jsonStream = context.assets.open("service_account.json")
     val credentials = GoogleCredentials.fromStream(jsonStream)
         .createScoped(listOf(SheetsScopes.SPREADSHEETS))
@@ -29,25 +74,6 @@ fun getSheetsService(context: Context): Sheets {
     return Sheets.Builder(transport, jsonFactory, HttpCredentialsAdapter(credentials))
         .setApplicationName("Plank App")
         .build()
-}
-
-fun writePersonEntry(
-    context: Context,
-    sheetId: String,
-    sheetName: String,
-    personName: String,
-    plankRecord: LogRecord
-) {
-    val targetColumnIndex = findColumnIndexByName(sheetName, context, sheetId, personName)
-    val targetRowIndex = findRowIndexByDate(sheetName, plankRecord.date, context, sheetId)
-
-    val body = ValueRange().setValues(listOf(listOf(plankRecord.elapsedSeconds)))
-    val service = getSheetsService(context.applicationContext)
-    val cellCoordinated = "${indexToColumnName(targetColumnIndex + 1)}${targetRowIndex + 1}"
-    val result = service.spreadsheets().values()
-        .update(sheetId, "$sheetName!$cellCoordinated", body)
-        .setValueInputOption("RAW")
-        .execute()
 }
 
 private fun indexToColumnName(index: Int): String {
@@ -66,7 +92,7 @@ private fun indexToColumnName(index: Int): String {
     return columnName.toString()
 }
 
-fun findRowIndexByDate(
+private fun findRowIndexByDate(
     sheetName: String,
     date: Instant,
     context: Context,
@@ -96,30 +122,6 @@ private fun formatInstantToDateString(instant: Instant): String {
     val localDate = instant.atZone(zoneId).toLocalDate()
     val formatter = DateTimeFormatter.ofPattern("d.M.")
     return localDate.format(formatter)
-}
-
-fun getPersonData(context: Context, sheetId: String, sheetName: String, personName: String) {
-    val targetColumnIndex = findColumnIndexByName(sheetName, context, sheetId, personName)
-    val range = "$sheetName!2:100"
-
-    val service = getSheetsService(context.applicationContext)
-    val response = service.spreadsheets().values()
-        .get(sheetId, range)
-        .execute()
-
-    val values = response.getValues()
-    val entries: MutableMap<String, Int> = mutableMapOf()
-    values.forEach { row ->
-        val strDate = row[0].toString()
-        println(row)
-        if (row.size > targetColumnIndex && isValidDateFormat(strDate)) {
-            println("inside")
-            val secondsInPlank = row[targetColumnIndex].toString()
-            entries[strDate] = secondsInPlank.toInt()
-        }
-    }
-
-    println(entries)
 }
 
 private fun isValidDateFormat(input: String): Boolean {

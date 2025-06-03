@@ -1,4 +1,4 @@
-package cz.bradacd.plankchallenge.LogRepository
+package cz.bradacd.plankchallenge.LocalRepository
 
 import android.content.Context
 import android.content.SharedPreferences
@@ -19,6 +19,7 @@ data class LogRecord(
 }
 
 private val gson = Gson()
+private const val storageName = "PlankLog"
 
 fun LogRecord.save(context: Context) {
     val currentLogEntries = loadLogEntries(context)
@@ -40,7 +41,7 @@ fun LogRecord.delete(context: Context) {
 fun loadLogEntries(context: Context): List<LogRecord> {
     val sharedPreferences = getPreferences(context)
 
-    val logJson = sharedPreferences.getString("PlankLog", null)
+    val logJson = sharedPreferences.getString(storageName, null)
 
     return if (logJson != null) {
         gson.fromJson(logJson, Log::class.java).logEntries.also {
@@ -55,10 +56,10 @@ private fun saveLog(context: Context, newLog: Log) {
     val sharedPreferences = getPreferences(context)
     val editor = sharedPreferences.edit()
     gson.toJson(newLog)
-    editor.putString("PlankLog", Gson().toJson(newLog))
+    editor.putString(storageName, Gson().toJson(newLog))
     editor.apply()
 }
 
 private fun getPreferences(context: Context): SharedPreferences {
-    return context.getSharedPreferences("PlankLog", Context.MODE_PRIVATE)
+    return context.getSharedPreferences(storageName, Context.MODE_PRIVATE)
 }

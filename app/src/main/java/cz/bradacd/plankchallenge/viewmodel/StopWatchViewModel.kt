@@ -9,8 +9,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import android.os.SystemClock
-import cz.bradacd.plankchallenge.LogRepository.LogRecord
-import cz.bradacd.plankchallenge.LogRepository.save
+import cz.bradacd.plankchallenge.LocalRepository.LogRecord
+import cz.bradacd.plankchallenge.LocalRepository.save
 import java.time.Instant
 import java.util.UUID
 

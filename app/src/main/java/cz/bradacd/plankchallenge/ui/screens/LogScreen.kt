@@ -29,7 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import cz.bradacd.plankchallenge.LogRepository.LogRecord
+import cz.bradacd.plankchallenge.LocalRepository.LogRecord
 import cz.bradacd.plankchallenge.formatTimeFromSeconds
 import cz.bradacd.plankchallenge.viewmodel.LogViewModel
 import java.time.ZoneId
