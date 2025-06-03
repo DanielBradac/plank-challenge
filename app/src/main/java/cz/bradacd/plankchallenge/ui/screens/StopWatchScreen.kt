@@ -24,7 +24,7 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import cz.bradacd.plankchallenge.formatTimeFromTenths
+import cz.bradacd.plankchallenge.formatTimeFromSeconds
 import cz.bradacd.plankchallenge.viewmodel.StopWatchState
 import cz.bradacd.plankchallenge.viewmodel.StopWatchViewModel
 
@@ -33,7 +33,8 @@ fun StopWatchScreen(viewModel: StopWatchViewModel = viewModel()) {
     val context = LocalContext.current
 
     val stopWatchState by viewModel.stopWatchState.collectAsState()
-    val elapsedTenths by viewModel.elapsedTenths.collectAsState()
+    val elapsedSeconds by viewModel.elapsedSeconds.collectAsState()
+    val countDownSeconds by viewModel.countDownSeconds.collectAsState()
 
     // Keep the screen alive on stopwatch
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -52,11 +53,6 @@ fun StopWatchScreen(viewModel: StopWatchViewModel = viewModel()) {
             .padding(16.dp)
             .pointerInput(Unit) {
                 detectTapGestures(
-                    onPress = {
-                        viewModel.onPressDown()
-                        tryAwaitRelease()
-                        viewModel.onRelease()
-                    },
                     onTap = {
                         viewModel.onTap(context)
                     }
@@ -67,8 +63,14 @@ fun StopWatchScreen(viewModel: StopWatchViewModel = viewModel()) {
             modifier = Modifier.align(Alignment.Center),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            val displayedTime = if (stopWatchState == StopWatchState.CountDown) {
+                countDownSeconds
+            } else {
+                elapsedSeconds
+            }
+
             Text(
-                text = elapsedTenths.formatTimeFromTenths(),
+                text = displayedTime.formatTimeFromSeconds(),
                 style = MaterialTheme.typography.displayMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -83,8 +85,8 @@ fun StopWatchScreen(viewModel: StopWatchViewModel = viewModel()) {
 
 fun getTitleByState(state: StopWatchState): String {
     return when(state) {
-        StopWatchState.Ready -> "Press and hold the screen"
-        StopWatchState.Set -> "Release to start"
+        StopWatchState.Ready -> "Tap to start"
+        StopWatchState.CountDown -> "Get ready"
         StopWatchState.Running -> "Tap to stop"
         StopWatchState.Stopped -> "Tap to reset run"
     }

@@ -13,7 +13,7 @@ data class Log(
 data class LogRecord(
     @SerializedName("id") val id: String,
     @SerializedName("date") val dateMillis: Long,
-    @SerializedName("elapsedTenths") val elapsedTenths: Int
+    @SerializedName("elapsedSeconds") val elapsedSeconds: Int
 ) {
     val date: Instant get() = Instant.ofEpochMilli(dateMillis)
 }

@@ -30,7 +30,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cz.bradacd.plankchallenge.LogRepository.LogRecord
-import cz.bradacd.plankchallenge.formatTimeFromTenths
+import cz.bradacd.plankchallenge.formatTimeFromSeconds
 import cz.bradacd.plankchallenge.viewmodel.LogViewModel
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -69,7 +69,7 @@ fun LogRecordItem(
     record: LogRecord,
     onDelete: () -> Unit
 ) {
-    val formattedTime = record.elapsedTenths.formatTimeFromTenths()
+    val formattedTime = record.elapsedSeconds.formatTimeFromSeconds()
     val formattedDate = remember(record.date) {
         DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")
             .withZone(ZoneId.systemDefault())

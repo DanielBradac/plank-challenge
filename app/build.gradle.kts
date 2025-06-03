@@ -44,7 +44,7 @@ android {
     }
     packaging {
         resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "/META-INF/{AL2.0,LGPL2.1,INDEX.LIST,DEPENDENCIES}"
         }
     }
 }
@@ -77,5 +77,12 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
     // GSON
-    implementation("com.google.code.gson:gson:2.9.0")
+    //implementation("com.google.code.gson:gson:2.9.0")
+
+    // Google APIs
+    //implementation("com.google.api-client:google-api-client-android:1.34.0")
+    //implementation("com.google.api-client:google-api-client-gson:1.34.0")
+    //implementation("com.google.auth:google-auth-library-oauth2-http:1.19.0")
+    implementation(libs.google.api.services.sheets)
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
 }

@@ -16,7 +16,7 @@ import java.util.UUID
 
 enum class StopWatchState {
     Ready,
-    Set,
+    CountDown,
     Running,
     Stopped
 }
@@ -29,14 +29,19 @@ class StopWatchViewModel : ViewModel() {
     val stopWatchState: StateFlow<StopWatchState> = _stopWatchState
 
     // Elapsed time in tenths of a second
-    private val _elapsedTenths = MutableStateFlow(0)
-    val elapsedTenths: StateFlow<Int> = _elapsedTenths
+    private val _elapsedSeconds = MutableStateFlow(0)
+    val elapsedSeconds: StateFlow<Int> = _elapsedSeconds
+
+    // Elapsed time in tenths of a second
+    private val _countDownSeconds = MutableStateFlow(5)
+    val countDownSeconds: StateFlow<Int> = _countDownSeconds
 
     private var timerJob: Job? = null
+    private var countDownJob: Job? = null
     private var startTime: Long = 0L
 
-    fun resetStopWatch() {
-        _elapsedTenths.value = 0
+    private fun resetStopWatch() {
+        _elapsedSeconds.value = 0
     }
 
     fun startStopWatch() {
@@ -46,10 +51,21 @@ class StopWatchViewModel : ViewModel() {
         timerJob = viewModelScope.launch {
             while (true) {
                 val now = SystemClock.elapsedRealtime()
-                val tenthsElapsed = ((now - startTime) / 100).toInt()
-                _elapsedTenths.value = tenthsElapsed
-                delay(100L)
+                val secondsElapsed = ((now - startTime) / 1000).toInt()
+                _elapsedSeconds.value = secondsElapsed
+                delay(1000L)
             }
+        }
+    }
+
+    fun startCountDown() {
+        countDownJob = viewModelScope.launch {
+            _countDownSeconds.value = 5
+            while (countDownSeconds.value > 0) {
+                delay(1000L)
+                _countDownSeconds.value -= 1
+            }
+            startStopWatch()
         }
     }
 
@@ -59,38 +75,27 @@ class StopWatchViewModel : ViewModel() {
         LogRecord(
             id = UUID.randomUUID().toString(),
             dateMillis = Instant.now().toEpochMilli(),
-            elapsedTenths = elapsedTenths.value
+            elapsedSeconds = elapsedSeconds.value
         ).save(context)
     }
 
     fun onTap(context: Context) {
-        // New run
-        if (stopWatchState.value == StopWatchState.Stopped) {
-            resetStopWatch()
-            _stopWatchState.value = StopWatchState.Ready
-        }
-
-        // Run stopped
-        if (stopWatchState.value == StopWatchState.Running) {
-            stopStopWatch(context)
-            _stopWatchState.value = StopWatchState.Stopped
-        }
-    }
-
-    fun onPressDown() {
-        // Run set
-        if (stopWatchState.value == StopWatchState.Ready) {
-            _stopWatchState.value = StopWatchState.Set
-        }
-    }
-
-    fun onRelease() {
-        // Run started
-        if (stopWatchState.value == StopWatchState.Set) {
-            startStopWatch()
-            _stopWatchState.value = StopWatchState.Running
+        when (stopWatchState.value) {
+            StopWatchState.Stopped -> {
+                resetStopWatch()
+                _stopWatchState.value = StopWatchState.Ready
+            }
+            StopWatchState.Running -> {
+                stopStopWatch(context)
+                _stopWatchState.value = StopWatchState.Stopped
+            }
+            StopWatchState.Ready -> {
+                startCountDown()
+                _stopWatchState.value = StopWatchState.CountDown
+            }
+            StopWatchState.CountDown -> {
+                _stopWatchState.value = StopWatchState.Ready
+            }
         }
     }
-
-
 }
