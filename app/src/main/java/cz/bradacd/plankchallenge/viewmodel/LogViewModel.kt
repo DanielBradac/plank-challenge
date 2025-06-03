@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import cz.bradacd.plankchallenge.LocalRepository.LogRecord
 import cz.bradacd.plankchallenge.LocalRepository.delete
 import cz.bradacd.plankchallenge.LocalRepository.loadLogEntries
+import cz.bradacd.plankchallenge.LocalRepository.loadSettingsValidated
 import cz.bradacd.plankchallenge.SheetsClient.writePersonEntry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,5 +25,11 @@ class LogViewModel : ViewModel() {
     fun delete(context: Context, record: LogRecord) {
         record.delete(context)
         _log.value = loadLogEntries(context)
+    }
+
+    fun share(context: Context, record: LogRecord) {
+        viewModelScope.launch(Dispatchers.IO) {
+            writePersonEntry(context, record, loadSettingsValidated(context))
+        }
     }
 }

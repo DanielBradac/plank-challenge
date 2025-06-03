@@ -1,29 +1,13 @@
 package cz.bradacd.plankchallenge.ui.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.Upload
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -39,43 +23,66 @@ import java.time.format.DateTimeFormatter
 fun LogScreen(viewModel: LogViewModel = viewModel()) {
     val context = LocalContext.current
     val log by viewModel.log.collectAsState()
-    var itemToDelete by remember { mutableStateOf<LogRecord?>(null) }
+    var dialogState by remember { mutableStateOf<DialogAction?>(null) }
 
     LaunchedEffect(Unit) {
         viewModel.onEntry(context)
     }
 
-    LogList(
-        log = log,
-        onDeleteRequest = { itemToDelete = it }
-    )
+    LogList(log = log,
+        onDeleteRequest = { dialogState = DialogAction.Delete(it) },
+        onShareRequest = { dialogState = DialogAction.Share(it) })
 
-    itemToDelete?.let { record ->
-        DeleteConfirmationDialog(
-            record = record,
-            onConfirm = {
-                viewModel.delete(context, record)
-                itemToDelete = null
-            },
-            onDismiss = {
-                itemToDelete = null
-            }
-        )
+    dialogState?.let { action ->
+        val (title, confirmText, message, onConfirm) = when (action) {
+            is DialogAction.Delete -> DialogInput(
+                "Confirm Delete",
+                "Delete",
+                "Are you sure you want to delete plank:\n" +
+                        "\nDate: ${formattedDate(action.record)}" +
+                        "\nDuration: ${action.record.elapsedSeconds.formatTimeFromSeconds()}"
+            ) { viewModel.delete(context, action.record) }
+
+            is DialogAction.Share -> DialogInput(
+                "Confirm Upload",
+                "Upload",
+                "Are you sure you want to upload plank:\n" +
+                        "\nDate: ${formattedDate(action.record)}" +
+                        "\nDuration: ${action.record.elapsedSeconds.formatTimeFromSeconds()}"
+            ) { viewModel.share(context, action.record) }
+        }
+
+        ConfirmDialog(title = title, message = message, confirmText = confirmText, onConfirm = {
+            onConfirm()
+            dialogState = null
+        }, onDismiss = { dialogState = null })
+    }
+}
+
+@Composable
+fun LogList(
+    log: List<LogRecord>, onDeleteRequest: (LogRecord) -> Unit, onShareRequest: (LogRecord) -> Unit
+) {
+    val scrollState = rememberScrollState()
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+            .padding(16.dp)
+    ) {
+        log.forEach { record ->
+            LogRecordItem(record = record,
+                onDelete = { onDeleteRequest(record) },
+                onShare = { onShareRequest(record) })
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+        }
     }
 }
 
 @Composable
 fun LogRecordItem(
-    record: LogRecord,
-    onDelete: () -> Unit
+    record: LogRecord, onDelete: () -> Unit, onShare: () -> Unit
 ) {
-    val formattedTime = record.elapsedSeconds.formatTimeFromSeconds()
-    val formattedDate = remember(record.date) {
-        DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")
-            .withZone(ZoneId.systemDefault())
-            .format(record.date)
-    }
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -84,69 +91,52 @@ fun LogRecordItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column {
-            Text(text = formattedDate, style = MaterialTheme.typography.titleMedium)
-            Text(text = "Duration: $formattedTime", style = MaterialTheme.typography.bodyMedium)
-        }
-
-        IconButton(onClick = onDelete) {
-            Icon(
-                imageVector = Icons.Default.Delete,
-                contentDescription = "Delete"
+            Text(text = formattedDate(record), style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = "Duration: ${record.elapsedSeconds.formatTimeFromSeconds()}",
+                style = MaterialTheme.typography.bodyMedium
             )
+        }
+        Row {
+            IconButton(onClick = onShare) {
+                Icon(Icons.Default.Upload, contentDescription = "Share")
+            }
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Default.Delete, contentDescription = "Delete")
+            }
         }
     }
 }
 
 @Composable
-fun LogList(
-    log: List<LogRecord>,
-    onDeleteRequest: (LogRecord) -> Unit
-) {
-    val scrollState = rememberScrollState()
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState)
-            .padding(16.dp)
-    ) {
-        log.forEach { record ->
-            LogRecordItem(
-                record = record,
-                onDelete = { onDeleteRequest(record) }
-            )
-            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-        }
-    }
-}
-
-@Composable
-fun DeleteConfirmationDialog(
-    record: LogRecord,
+fun ConfirmDialog(
+    title: String,
+    message: String,
+    confirmText: String,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    val formattedDate = remember(record.date) {
-        DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")
-            .withZone(ZoneId.systemDefault())
-            .format(record.date)
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Confirm Delete") },
-        text = {
-            Text("Are you sure you want to delete your plank from:\n\n$formattedDate?")
-        },
+    AlertDialog(onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = { Text(message) },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text("Delete")
+                Text(confirmText)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
                 Text("Cancel")
             }
-        }
-    )
+        })
 }
+
+fun formattedDate(record: LogRecord): String =
+    DateTimeFormatter.ofPattern("dd.MM.yyyy").withZone(ZoneId.systemDefault()).format(record.date)
+
+sealed class DialogAction(val record: LogRecord) {
+    class Delete(record: LogRecord) : DialogAction(record)
+    class Share(record: LogRecord) : DialogAction(record)
+}
+
+data class DialogInput<A, B, C, D>(val title: A, val confirmText: B, val message: C, val onConfirm: D)

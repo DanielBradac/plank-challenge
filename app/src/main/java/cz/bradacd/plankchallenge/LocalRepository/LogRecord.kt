@@ -44,9 +44,7 @@ fun loadLogEntries(context: Context): List<LogRecord> {
     val logJson = sharedPreferences.getString(storageName, null)
 
     return if (logJson != null) {
-        gson.fromJson(logJson, Log::class.java).logEntries.also {
-            it.forEach { println(it.date) }
-        }
+        gson.fromJson(logJson, Log::class.java).logEntries.sortedBy { it.dateMillis }
     } else {
         emptyList()
     }
