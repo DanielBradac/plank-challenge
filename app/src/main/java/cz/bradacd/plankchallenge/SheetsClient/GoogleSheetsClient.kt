@@ -36,9 +36,10 @@ fun getPersonData(context: Context, settings: Settings): PersonData {
         val strDate = row[0].toString()
         println(row)
         if (row.size > targetColumnIndex && isValidDateFormat(strDate)) {
-            println("inside")
-            val secondsInPlank = row[targetColumnIndex].toString()
-            entries[strDate] = secondsInPlank.toInt()
+            val secondsInPlank = row[targetColumnIndex].toString().toIntOrNull()
+            if (secondsInPlank != null && secondsInPlank >= 0) {
+                entries[strDate] = secondsInPlank
+            }
         }
     }
 

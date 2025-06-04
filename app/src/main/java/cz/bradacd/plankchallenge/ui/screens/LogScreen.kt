@@ -1,5 +1,7 @@
 package cz.bradacd.plankchallenge.ui.screens
 
+import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -23,16 +25,57 @@ import java.time.format.DateTimeFormatter
 fun LogScreen(viewModel: LogViewModel = viewModel()) {
     val context = LocalContext.current
     val log by viewModel.log.collectAsState()
+    val loading by viewModel.loading.collectAsState()
     var dialogState by remember { mutableStateOf<DialogAction?>(null) }
 
     LaunchedEffect(Unit) {
         viewModel.onEntry(context)
     }
 
-    LogList(log = log,
-        onDeleteRequest = { dialogState = DialogAction.Delete(it) },
-        onShareRequest = { dialogState = DialogAction.Share(it) })
+    LaunchedEffect(Unit) {
+        viewModel.toastEvent.collect { message ->
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+    }
 
+    Box(modifier = Modifier.fillMaxSize()) {
+
+        // Scrollable log list
+        LogList(
+            log = log,
+            onDeleteRequest = { dialogState = DialogAction.Delete(it) },
+            onShareRequest = { dialogState = DialogAction.Share(it) },
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = 72.dp)
+        )
+
+        // Sync button
+        Button(
+            onClick = { dialogState = DialogAction.Sync },
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(16.dp)
+        ) {
+            Text("Sync data from challenge sheet online")
+        }
+
+        // 🔄 Loading overlay
+        if (loading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background.copy(alpha = 0.5f))
+                    .align(Alignment.Center)
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+        }
+    }
+
+    // Dialog handling
     dialogState?.let { action ->
         val (title, confirmText, message, onConfirm) = when (action) {
             is DialogAction.Delete -> DialogInput(
@@ -50,30 +93,46 @@ fun LogScreen(viewModel: LogViewModel = viewModel()) {
                         "\nDate: ${formattedDate(action.record)}" +
                         "\nDuration: ${action.record.elapsedSeconds.formatTimeFromSeconds()}"
             ) { viewModel.share(context, action.record) }
+
+            is DialogAction.Sync -> DialogInput(
+                "Confirm Sync",
+                "Synchronize",
+                "Are you sure you want to pull data from the online sheet?\nExisting data will be overridden."
+            ) { viewModel.pullDataFromSheet(context) }
         }
 
-        ConfirmDialog(title = title, message = message, confirmText = confirmText, onConfirm = {
-            onConfirm()
-            dialogState = null
-        }, onDismiss = { dialogState = null })
+        ConfirmDialog(
+            title = title,
+            message = message,
+            confirmText = confirmText,
+            onConfirm = {
+                onConfirm()
+                dialogState = null
+            },
+            onDismiss = { dialogState = null }
+        )
     }
 }
 
 @Composable
 fun LogList(
-    log: List<LogRecord>, onDeleteRequest: (LogRecord) -> Unit, onShareRequest: (LogRecord) -> Unit
+    log: List<LogRecord>,
+    onDeleteRequest: (LogRecord) -> Unit,
+    onShareRequest: (LogRecord) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
     Column(
-        modifier = Modifier
-            .fillMaxSize()
+        modifier = modifier
             .verticalScroll(scrollState)
             .padding(16.dp)
     ) {
         log.forEach { record ->
-            LogRecordItem(record = record,
+            LogRecordItem(
+                record = record,
                 onDelete = { onDeleteRequest(record) },
-                onShare = { onShareRequest(record) })
+                onShare = { onShareRequest(record) }
+            )
             HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
         }
     }
@@ -134,9 +193,15 @@ fun ConfirmDialog(
 fun formattedDate(record: LogRecord): String =
     DateTimeFormatter.ofPattern("dd.MM.yyyy").withZone(ZoneId.systemDefault()).format(record.date)
 
-sealed class DialogAction(val record: LogRecord) {
-    class Delete(record: LogRecord) : DialogAction(record)
-    class Share(record: LogRecord) : DialogAction(record)
+sealed class DialogAction(open val record: LogRecord? = null) {
+    data class Delete(override val record: LogRecord) : DialogAction(record)
+    data class Share(override val record: LogRecord) : DialogAction(record)
+    object Sync : DialogAction(null)
 }
 
-data class DialogInput<A, B, C, D>(val title: A, val confirmText: B, val message: C, val onConfirm: D)
+data class DialogInput<A, B, C, D>(
+    val title: A,
+    val confirmText: B,
+    val message: C,
+    val onConfirm: D
+)

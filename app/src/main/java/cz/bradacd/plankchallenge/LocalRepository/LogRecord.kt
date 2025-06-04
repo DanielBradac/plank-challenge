@@ -50,7 +50,7 @@ fun loadLogEntries(context: Context): List<LogRecord> {
     }
 }
 
-private fun saveLog(context: Context, newLog: Log) {
+fun saveLog(context: Context, newLog: Log) {
     val sharedPreferences = getPreferences(context)
     val editor = sharedPreferences.edit()
     gson.toJson(newLog)
