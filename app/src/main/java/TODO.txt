@@ -1,2 +1,0 @@
-// TODO current standing stránka
-// TODO defaulty pro instalaci

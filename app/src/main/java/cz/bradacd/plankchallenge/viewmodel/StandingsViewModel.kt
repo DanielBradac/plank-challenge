@@ -3,7 +3,7 @@ package cz.bradacd.plankchallenge.viewmodel
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import cz.bradacd.plankchallenge.LocalRepository.loadSettingsValidated
+import cz.bradacd.plankchallenge.LocalRepository.loadSettingValidatedBasic
 import cz.bradacd.plankchallenge.SheetsClient.PersonStanding
 import cz.bradacd.plankchallenge.SheetsClient.getCurrentStandings
 import kotlinx.coroutines.Dispatchers
@@ -37,7 +37,7 @@ class StandingsViewModel : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             _loading.value = true
             try {
-                _standings.value = getCurrentStandings(context, loadSettingsValidated(context))
+                _standings.value = getCurrentStandings(context, loadSettingValidatedBasic(context))
             } catch (e: Exception) {
                 _toastEvent.send("Sync failed: ${e.localizedMessage ?: "Unknown error"}")
             } finally {

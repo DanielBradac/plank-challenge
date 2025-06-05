@@ -7,7 +7,7 @@ import cz.bradacd.plankchallenge.LocalRepository.Log
 import cz.bradacd.plankchallenge.LocalRepository.LogRecord
 import cz.bradacd.plankchallenge.LocalRepository.delete
 import cz.bradacd.plankchallenge.LocalRepository.loadLogEntries
-import cz.bradacd.plankchallenge.LocalRepository.loadSettingsValidated
+import cz.bradacd.plankchallenge.LocalRepository.loadSettingsValidatedFull
 import cz.bradacd.plankchallenge.LocalRepository.saveLog
 import cz.bradacd.plankchallenge.SheetsClient.getPersonData
 import cz.bradacd.plankchallenge.SheetsClient.writePersonEntry
@@ -43,7 +43,7 @@ class LogViewModel : ViewModel() {
     fun share(context: Context, record: LogRecord) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                writePersonEntry(context, record, loadSettingsValidated(context))
+                writePersonEntry(context, record, loadSettingsValidatedFull(context))
                 _toastEvent.send("Plank uploaded successfully!")
             } catch (e: Exception) {
                 _toastEvent.send("Upload failed: ${e.localizedMessage ?: "Unknown error"}")
@@ -55,7 +55,7 @@ class LogViewModel : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             _loading.value = true
             try {
-                val data = getPersonData(context, loadSettingsValidated(context))
+                val data = getPersonData(context, loadSettingsValidatedFull(context))
 
                 val newLog = Log(
                     logEntries = data.entries.map {

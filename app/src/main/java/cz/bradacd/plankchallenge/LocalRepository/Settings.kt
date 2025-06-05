@@ -34,8 +34,8 @@ fun loadSettings(context: Context): Settings {
     }
 }
 
-fun loadSettingsValidated(context: Context): Settings {
-    val settings = loadSettings(context)?: throw InvalidSettingsException("Settings unavailable.")
+fun loadSettingValidatedBasic(context: Context): Settings {
+    val settings = loadSettings(context)
 
     if (settings.sheetId.isBlank()) {
         throw InvalidSettingsException("Invalid settings - sheetId is not filled in.")
@@ -45,6 +45,13 @@ fun loadSettingsValidated(context: Context): Settings {
         throw InvalidSettingsException("Invalid settings - sheetName is not filled in.")
     }
 
+    return settings
+}
+
+fun loadSettingsValidatedFull(context: Context): Settings {
+    loadSettingValidatedBasic(context)
+
+    val settings = loadSettings(context)
     if (settings.personName.isBlank()) {
         throw InvalidSettingsException("Invalid settings - name is not filled in.")
     }
