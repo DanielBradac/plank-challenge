@@ -56,8 +56,9 @@ fun LogScreen(viewModel: LogViewModel = viewModel()) {
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(16.dp)
+                .fillMaxWidth()
         ) {
-            Text("Sync data from challenge sheet online")
+            Text("Sync data from challenge table")
         }
 
         // 🔄 Loading overlay

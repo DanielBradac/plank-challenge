@@ -9,10 +9,8 @@ import com.google.api.services.sheets.v4.Sheets
 import com.google.api.services.sheets.v4.SheetsScopes
 import com.google.api.services.sheets.v4.model.ValueRange
 import cz.bradacd.plankchallenge.GoogleSheetException
-import cz.bradacd.plankchallenge.InvalidSettingsException
 import cz.bradacd.plankchallenge.LocalRepository.LogRecord
 import cz.bradacd.plankchallenge.LocalRepository.Settings
-import cz.bradacd.plankchallenge.LocalRepository.loadSettings
 import java.time.Instant
 import java.time.LocalDate
 import java.time.Year
@@ -20,14 +18,53 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 
+fun getCurrentStandings(context: Context, settings: Settings): List<PersonStanding> {
+    val participants = getAllParticipants(settings.sheetName, context, settings.sheetId)
+
+    return participants.map { participantName ->
+        val personData =
+            getDataPerName(settings.sheetName, settings.sheetId, participantName, context)
+
+        PersonStanding(
+            name = participantName,
+            points = personData.entries.values.sum()
+        )
+    }
+}
+
 fun getPersonData(context: Context, settings: Settings): PersonData {
+    return getDataPerName(settings.sheetName, settings.sheetId, settings.personName, context)
+}
+
+fun writePersonEntry(context: Context, plankRecord: LogRecord, settings: Settings) {
     val targetColumnIndex =
         findColumnIndexByName(settings.sheetName, context, settings.sheetId, settings.personName)
-    val range = "${settings.sheetName}!2:100"
+    val targetRowIndex =
+        findRowIndexByDate(settings.sheetName, plankRecord.date, context, settings.sheetId)
+
+    val body = ValueRange().setValues(listOf(listOf(plankRecord.elapsedSeconds)))
+    val service = getSheetsService(context.applicationContext)
+    val cellCoordinated = "${indexToColumnName(targetColumnIndex + 1)}${targetRowIndex + 1}"
+    service.spreadsheets().values()
+        .update(settings.sheetId, "${settings.sheetName}!$cellCoordinated", body)
+        .setValueInputOption("RAW")
+        .execute()
+}
+
+private fun getDataPerName(
+    sheetName: String,
+    sheetId: String,
+    personName: String,
+    context: Context
+): PersonData {
+    val targetColumnIndex =
+        findColumnIndexByName(sheetName, context, sheetId, personName)
+
+    val range = "${sheetName}!2:100"
 
     val service = getSheetsService(context.applicationContext)
     val response = service.spreadsheets().values()
-        .get(settings.sheetId, range)
+        .get(sheetId, range)
         .execute()
 
     val values = response.getValues()
@@ -44,24 +81,33 @@ fun getPersonData(context: Context, settings: Settings): PersonData {
     }
 
     return PersonData(
-        name = settings.personName,
+        name = personName,
         entries = entries
     )
 }
 
-fun writePersonEntry(context: Context, plankRecord: LogRecord, settings: Settings) {
-    val targetColumnIndex =
-        findColumnIndexByName(settings.sheetName, context, settings.sheetId, settings.personName)
-    val targetRowIndex =
-        findRowIndexByDate(settings.sheetName, plankRecord.date, context, settings.sheetId)
+private fun getAllParticipants(
+    sheetName: String,
+    context: Context,
+    sheetId: String,
+): List<String> {
+    val range = "$sheetName!1:1"
 
-    val body = ValueRange().setValues(listOf(listOf(plankRecord.elapsedSeconds)))
     val service = getSheetsService(context.applicationContext)
-    val cellCoordinated = "${indexToColumnName(targetColumnIndex + 1)}${targetRowIndex + 1}"
-    service.spreadsheets().values()
-        .update(settings.sheetId, "${settings.sheetName}!$cellCoordinated", body)
-        .setValueInputOption("RAW")
+    val response: ValueRange = service.spreadsheets().values()
+        .get(sheetId, range)
         .execute()
+
+    response.getValues().let { values ->
+        if (values.isNullOrEmpty()) {
+            throw GoogleSheetException("No data on first row of the sheet.")
+        }
+
+        val firstRow = values[0]
+        return firstRow.filter { name ->
+            name.toString().isNotBlank()
+        }.map { it.toString() }
+    }
 }
 
 private fun getSheetsService(context: Context): Sheets {
